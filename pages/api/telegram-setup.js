@@ -49,18 +49,13 @@ export default async function handler(req, res) {
   }
 
   const webhookUrl = `${baseUrl}/api/telegram-webhook`;
-  const options = process.env.TELEGRAM_WEBHOOK_SECRET
-    ? {
-        secret_token: process.env.TELEGRAM_WEBHOOK_SECRET,
-        allowed_updates: ['message'],
-        drop_pending_updates: false,
-      }
-    : {
-        allowed_updates: ['message'],
-        drop_pending_updates: false,
-      };
+  const options = {
+    allowed_updates: ['message'],
+    drop_pending_updates: true,
+  };
 
   try {
+    await bot.deleteWebHook({ drop_pending_updates: true });
     await bot.setWebHook(webhookUrl, options);
     await registerTelegramCommands(bot);
     const webhookInfo = await bot.getWebHookInfo();
