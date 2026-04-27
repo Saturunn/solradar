@@ -11,7 +11,7 @@ Built for the Birdeye BIP Competition Sprint 2.
 - **Risk Scoring** - Automated score from 0-100 based on security analysis
 - **Security Flags** - Freeze authority, mint authority, and holder concentration checks
 - **Telegram Alerts** - Alerts when safer trending tokens break out by more than 20% in 24h
-- **Telegram Commands** - `/start`, `/help`, `/status`, and `/chatid` via webhook
+- **Telegram Commands** - `/start`, `/trending`, `/new`, `/safe`, `/token`, `/help`, `/status`, and `/chatid` via webhook
 - **Smart Auto Refresh** - Refreshes every 30 seconds only while the browser tab is active
 - **Rate Limiting** - Max 1 request per 10 seconds per IP on data endpoints
 - **API Cache** - Successful API responses are cached for 30 seconds
@@ -84,6 +84,15 @@ Then `/start`, `/help`, `/status`, and `/chatid` will be handled by:
 ```text
 /api/telegram-webhook
 ```
+
+Telegram menu commands:
+
+- `/trending` - show top trending tokens
+- `/new` - show latest new listings
+- `/safe` - show safer trending candidates
+- `/token <address>` - check risk for one token
+- `/status` - check bot configuration
+- `/chatid` - show the current chat id
 
 ## How Alerts Work
 

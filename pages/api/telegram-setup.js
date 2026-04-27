@@ -1,4 +1,4 @@
-import { getBot, getTelegramStatus } from '../../lib/telegram';
+import { getBot, getTelegramStatus, registerTelegramCommands, TELEGRAM_COMMANDS } from '../../lib/telegram';
 
 function getBaseUrl(req) {
   const configuredUrl = process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL;
@@ -55,9 +55,12 @@ export default async function handler(req, res) {
 
   try {
     await bot.setWebHook(webhookUrl, options);
+    await registerTelegramCommands(bot);
+
     return res.status(200).json({
       success: true,
       webhookUrl,
+      commands: TELEGRAM_COMMANDS,
       status,
     });
   } catch (error) {
