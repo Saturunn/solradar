@@ -9,7 +9,13 @@ export default async function handler(req, res) {
   const receivedSecret = req.headers['x-telegram-bot-api-secret-token'];
 
   if (expectedSecret && receivedSecret !== expectedSecret) {
-    return res.status(401).json({ success: false, error: 'Invalid webhook secret' });
+    console.error('Telegram webhook rejected: invalid secret token');
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid webhook secret',
+      hasExpectedSecret: true,
+      hasReceivedSecret: Boolean(receivedSecret),
+    });
   }
 
   try {

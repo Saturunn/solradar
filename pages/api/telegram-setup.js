@@ -50,17 +50,26 @@ export default async function handler(req, res) {
 
   const webhookUrl = `${baseUrl}/api/telegram-webhook`;
   const options = process.env.TELEGRAM_WEBHOOK_SECRET
-    ? { secret_token: process.env.TELEGRAM_WEBHOOK_SECRET }
-    : {};
+    ? {
+        secret_token: process.env.TELEGRAM_WEBHOOK_SECRET,
+        allowed_updates: ['message'],
+        drop_pending_updates: false,
+      }
+    : {
+        allowed_updates: ['message'],
+        drop_pending_updates: false,
+      };
 
   try {
     await bot.setWebHook(webhookUrl, options);
     await registerTelegramCommands(bot);
+    const webhookInfo = await bot.getWebHookInfo();
 
     return res.status(200).json({
       success: true,
       webhookUrl,
       commands: TELEGRAM_COMMANDS,
+      webhookInfo,
       status,
     });
   } catch (error) {
