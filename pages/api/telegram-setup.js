@@ -1,0 +1,67 @@
+import { getBot, getTelegramStatus } from '../../lib/telegram';
+
+function getBaseUrl(req) {
+  const configuredUrl = process.env.PUBLIC_APP_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (configuredUrl) return configuredUrl.replace(/\/$/, '');
+
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+
+  const host = req.headers.host;
+  if (!host || host.startsWith('localhost') || host.startsWith('127.0.0.1')) {
+    return null;
+  }
+
+  return `https://${host}`;
+}
+
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
+  }
+
+  const setupSecret = process.env.TELEGRAM_SETUP_SECRET;
+  const receivedSecret = req.headers['x-solradar-setup-secret'] || req.query.secret;
+
+  if (setupSecret && receivedSecret !== setupSecret) {
+    return res.status(401).json({ success: false, error: 'Invalid setup secret' });
+  }
+
+  const bot = getBot();
+  const status = getTelegramStatus();
+
+  if (!bot) {
+    return res.status(400).json({
+      success: false,
+      error: 'TELEGRAM_BOT_TOKEN must be configured.',
+      status,
+    });
+  }
+
+  const baseUrl = getBaseUrl(req);
+  if (!baseUrl) {
+    return res.status(400).json({
+      success: false,
+      error: 'Set PUBLIC_APP_URL to your public HTTPS app URL before registering the Telegram webhook.',
+      status,
+    });
+  }
+
+  const webhookUrl = `${baseUrl}/api/telegram-webhook`;
+  const options = process.env.TELEGRAM_WEBHOOK_SECRET
+    ? { secret_token: process.env.TELEGRAM_WEBHOOK_SECRET }
+    : {};
+
+  try {
+    await bot.setWebHook(webhookUrl, options);
+    return res.status(200).json({
+      success: true,
+      webhookUrl,
+      status,
+    });
+  } catch (error) {
+    console.error('Telegram setup error:', error.message);
+    return res.status(500).json({ success: false, error: error.message, status });
+  }
+}
