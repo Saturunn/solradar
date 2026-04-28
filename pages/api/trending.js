@@ -1,12 +1,28 @@
 import { getTrendingTokens, getTokenSecurity, calculateRiskScore } from '../../lib/birdeye';
 import { sendTelegramAlert } from '../../lib/telegram';
-import { checkRateLimit, getCachedResponse, setCachedResponse, shouldSendAlert, markAlertSent } from '../../lib/request-control';
+import {
+  checkRateLimitWindow,
+  getCachedResponse,
+  getStaleCachedResponse,
+  setCachedResponse,
+  shouldSendAlert,
+  markAlertSent,
+} from '../../lib/request-control';
 
 export default async function handler(req, res) {
-  const rateLimit = checkRateLimit(req, 'trending');
+  const rateLimit = checkRateLimitWindow(req, 'trending', 2500);
   if (!rateLimit.allowed) {
     res.setHeader('Retry-After', Math.ceil(rateLimit.retryAfterMs / 1000));
-    return res.status(429).json({ success: false, error: 'Rate limit exceeded. Try again in 10 seconds.' });
+    const stale = getStaleCachedResponse('trending:limit=20');
+    if (stale) {
+      return res.status(200).json({
+        ...stale,
+        stale: true,
+        warning: 'Showing cached trending data while refresh is cooling down.',
+      });
+    }
+
+    return res.status(429).json({ success: false, error: 'Rate limit exceeded. Try again in a few seconds.' });
   }
 
   const cacheKey = 'trending:limit=20';
@@ -44,6 +60,15 @@ export default async function handler(req, res) {
 
     res.status(200).json(payload);
   } catch (error) {
+    const stale = getStaleCachedResponse(cacheKey);
+    if (stale) {
+      return res.status(200).json({
+        ...stale,
+        stale: true,
+        warning: 'Showing cached trending data because Birdeye is temporarily unavailable.',
+      });
+    }
+
     res.status(502).json({ success: false, data: [], error: 'Trending data is temporarily unavailable.' });
   }
 }

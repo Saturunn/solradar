@@ -1,11 +1,25 @@
 import { getNewListings, getTokenSecurity, calculateRiskScore } from '../../lib/birdeye';
-import { checkRateLimit, getCachedResponse, setCachedResponse } from '../../lib/request-control';
+import {
+  checkRateLimitWindow,
+  getCachedResponse,
+  getStaleCachedResponse,
+  setCachedResponse,
+} from '../../lib/request-control';
 
 export default async function handler(req, res) {
-  const rateLimit = checkRateLimit(req, 'new-listings');
+  const rateLimit = checkRateLimitWindow(req, 'new-listings', 2500);
   if (!rateLimit.allowed) {
     res.setHeader('Retry-After', Math.ceil(rateLimit.retryAfterMs / 1000));
-    return res.status(429).json({ success: false, error: 'Rate limit exceeded. Try again in 10 seconds.' });
+    const stale = getStaleCachedResponse('new-listings:limit=20');
+    if (stale) {
+      return res.status(200).json({
+        ...stale,
+        stale: true,
+        warning: 'Showing cached new listings while refresh is cooling down.',
+      });
+    }
+
+    return res.status(429).json({ success: false, error: 'Rate limit exceeded. Try again in a few seconds.' });
   }
 
   const cacheKey = 'new-listings:limit=20';
@@ -35,6 +49,15 @@ export default async function handler(req, res) {
 
     res.status(200).json(payload);
   } catch (error) {
+    const stale = getStaleCachedResponse(cacheKey);
+    if (stale) {
+      return res.status(200).json({
+        ...stale,
+        stale: true,
+        warning: 'Showing cached new listings because Birdeye is temporarily unavailable.',
+      });
+    }
+
     res.status(502).json({ success: false, data: [], error: 'New listing data is temporarily unavailable.' });
   }
 }
