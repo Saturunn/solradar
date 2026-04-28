@@ -8,8 +8,7 @@ export default async function handler(req, res) {
 
   const rateLimit = checkRateLimitWindow(req, 'telegram-webhook', 1000);
   if (!rateLimit.allowed) {
-    res.setHeader('Retry-After', Math.ceil(rateLimit.retryAfterMs / 1000));
-    return res.status(429).json({ success: false, error: 'Rate limit exceeded.' });
+    return res.status(200).json({ success: true, handled: false, limited: true });
   }
 
   try {
@@ -17,6 +16,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, ...result });
   } catch (error) {
     console.error('Telegram webhook error:', error.message);
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(200).json({ success: true, handled: false, error: 'temporary_error' });
   }
 }
