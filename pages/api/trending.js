@@ -21,8 +21,6 @@ export default async function handler(req, res) {
         warning: 'Showing cached trending data while refresh is cooling down.',
       });
     }
-
-    return res.status(429).json({ success: false, error: 'Rate limit exceeded. Try again in a few seconds.' });
   }
 
   const cacheKey = 'trending:limit=20';
@@ -34,32 +32,40 @@ export default async function handler(req, res) {
   try {
     const tokens = await getTrendingTokens(20);
 
-    // Enrich top 5 with security data and send alerts for safe/caution ones
+    // Keep the list available even when individual security lookups fail.
     const enriched = await Promise.all(
-      tokens.slice(0, 10).map(async (token) => {
-        const security = await getTokenSecurity(token.address);
-        const riskScore = calculateRiskScore(security);
+      tokens.slice(0, 6).map(async (token) => {
+        try {
+          const security = await getTokenSecurity(token.address);
+          const riskScore = calculateRiskScore(security);
 
-        // Send Telegram alert for tokens with good scores breaking out
-        if (riskScore.score >= 60 && token.priceChange24hPercent > 20 && shouldSendAlert(token.address)) {
-          const sent = await sendTelegramAlert(token, riskScore);
-          if (sent) {
-            markAlertSent(token.address);
+          if (riskScore.score >= 60 && token.priceChange24hPercent > 20 && shouldSendAlert(token.address)) {
+            const sent = await sendTelegramAlert(token, riskScore);
+            if (sent) {
+              markAlertSent(token.address);
+            }
           }
-        }
 
-        return { ...token, security, riskScore };
+          return { ...token, security, riskScore };
+        } catch (securityError) {
+          console.error('Trending token enrichment failed:', token.address, securityError.message);
+          return {
+            ...token,
+            security: null,
+            riskScore: { score: null, label: 'N/A', color: 'gray', flags: [] },
+          };
+        }
       })
     );
 
-    // Return enriched + rest without security
-    const rest = tokens.slice(10).map(t => ({ ...t, riskScore: { score: null, label: 'N/A', color: 'gray', flags: [] } }));
+    const rest = tokens.slice(6).map(t => ({ ...t, riskScore: { score: null, label: 'N/A', color: 'gray', flags: [] } }));
 
     const payload = { success: true, data: [...enriched, ...rest] };
     setCachedResponse(cacheKey, payload);
 
     res.status(200).json(payload);
   } catch (error) {
+    console.error('Trending route failed:', error.message, error.details || '');
     const stale = getStaleCachedResponse(cacheKey);
     if (stale) {
       return res.status(200).json({

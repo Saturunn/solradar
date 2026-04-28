@@ -18,8 +18,6 @@ export default async function handler(req, res) {
         warning: 'Showing cached new listings while refresh is cooling down.',
       });
     }
-
-    return res.status(429).json({ success: false, error: 'Rate limit exceeded. Try again in a few seconds.' });
   }
 
   const cacheKey = 'new-listings:limit=20';
@@ -32,14 +30,23 @@ export default async function handler(req, res) {
     const tokens = await getNewListings(20);
 
     const enriched = await Promise.all(
-      tokens.slice(0, 10).map(async (token) => {
-        const security = await getTokenSecurity(token.address);
-        const riskScore = calculateRiskScore(security);
-        return { ...token, security, riskScore };
+      tokens.slice(0, 6).map(async (token) => {
+        try {
+          const security = await getTokenSecurity(token.address);
+          const riskScore = calculateRiskScore(security);
+          return { ...token, security, riskScore };
+        } catch (securityError) {
+          console.error('New listing token enrichment failed:', token.address, securityError.message);
+          return {
+            ...token,
+            security: null,
+            riskScore: { score: null, label: 'N/A', color: 'gray', flags: [] },
+          };
+        }
       })
     );
 
-    const rest = tokens.slice(10).map(t => ({
+    const rest = tokens.slice(6).map(t => ({
       ...t,
       riskScore: { score: null, label: 'N/A', color: 'gray', flags: [] }
     }));
@@ -49,6 +56,7 @@ export default async function handler(req, res) {
 
     res.status(200).json(payload);
   } catch (error) {
+    console.error('New listings route failed:', error.message, error.details || '');
     const stale = getStaleCachedResponse(cacheKey);
     if (stale) {
       return res.status(200).json({
