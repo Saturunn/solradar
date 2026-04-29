@@ -1,4 +1,9 @@
-import { getNewListings, getTokenSecurity, calculateRiskScore } from '../../lib/birdeye';
+import {
+  getNewListings,
+  getTokenSecurity,
+  getTrendingTokens,
+  calculateRiskScore,
+} from '../../lib/birdeye';
 import {
   checkRateLimitWindow,
   getCachedResponse,
@@ -28,30 +33,7 @@ export default async function handler(req, res) {
 
   try {
     const tokens = await getNewListings(20);
-
-    const enriched = await Promise.all(
-      tokens.slice(0, 6).map(async (token) => {
-        try {
-          const security = await getTokenSecurity(token.address);
-          const riskScore = calculateRiskScore(security);
-          return { ...token, security, riskScore };
-        } catch (securityError) {
-          console.error('New listing token enrichment failed:', token.address, securityError.message);
-          return {
-            ...token,
-            security: null,
-            riskScore: { score: null, label: 'N/A', color: 'gray', flags: [] },
-          };
-        }
-      })
-    );
-
-    const rest = tokens.slice(6).map(t => ({
-      ...t,
-      riskScore: { score: null, label: 'N/A', color: 'gray', flags: [] }
-    }));
-
-    const payload = { success: true, data: [...enriched, ...rest] };
+    const payload = await buildTokenPayload(tokens);
     setCachedResponse(cacheKey, payload);
 
     res.status(200).json(payload);
@@ -66,6 +48,46 @@ export default async function handler(req, res) {
       });
     }
 
+    try {
+      const fallbackTokens = await getTrendingTokens(20);
+      const fallbackPayload = await buildTokenPayload(fallbackTokens);
+
+      return res.status(200).json({
+        ...fallbackPayload,
+        stale: true,
+        fallbackSource: 'trending',
+        warning: 'New listings feed is temporarily unavailable. Showing trending tokens as fallback.',
+      });
+    } catch (fallbackError) {
+      console.error('New listings fallback failed:', fallbackError.message, fallbackError.details || '');
+    }
+
     res.status(502).json({ success: false, data: [], error: 'New listing data is temporarily unavailable.' });
   }
+}
+
+async function buildTokenPayload(tokens) {
+  const enriched = await Promise.all(
+    tokens.slice(0, 6).map(async (token) => {
+      try {
+        const security = await getTokenSecurity(token.address);
+        const riskScore = calculateRiskScore(security);
+        return { ...token, security, riskScore };
+      } catch (securityError) {
+        console.error('New listing token enrichment failed:', token.address, securityError.message);
+        return {
+          ...token,
+          security: null,
+          riskScore: { score: null, label: 'N/A', color: 'gray', flags: [] },
+        };
+      }
+    })
+  );
+
+  const rest = tokens.slice(6).map((token) => ({
+    ...token,
+    riskScore: { score: null, label: 'N/A', color: 'gray', flags: [] },
+  }));
+
+  return { success: true, data: [...enriched, ...rest] };
 }

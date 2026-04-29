@@ -1,35 +1,46 @@
-export default function StatsBar({ total, safe, danger }) {
+export default function StatsBar({ total, safe, danger, activeTab, fallbackSource }) {
   const items = [
-    { label: 'Scanned', value: total, tone: '#7dd3fc' },
-    { label: 'Safer', value: safe, tone: '#6ee7b7' },
-    { label: 'Risky', value: danger, tone: '#fb7185' },
-    { label: 'Refresh', value: '30s', tone: '#f59e0b' },
+    { label: 'Scanned', value: total, accent: '#7cc8ff' },
+    { label: 'Safer', value: safe, accent: '#77f2bc' },
+    { label: 'Risky', value: danger, accent: '#ff6b7a' },
+    {
+      label: 'Feed',
+      value: fallbackSource === 'trending'
+        ? 'Fallback'
+        : activeTab === 'trending'
+          ? 'Trending'
+          : 'New',
+      accent: fallbackSource === 'trending' ? '#ffd166' : '#d8e3f0',
+    },
   ];
 
   return (
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
         gap: 12,
-        marginBottom: 20,
+        marginBottom: 22,
       }}
     >
-      {items.map(({ label, value, tone }) => (
+      {items.map(({ label, value, accent }) => (
         <div
           key={label}
           style={{
-            background: 'linear-gradient(180deg, rgba(18,27,43,0.96) 0%, rgba(11,18,30,0.96) 100%)',
-            border: '1px solid rgba(148,163,184,0.14)',
-            borderRadius: 8,
-            padding: '14px 16px',
-            minHeight: 84,
+            minHeight: 98,
+            borderRadius: 14,
+            border: '1px solid rgba(106,126,148,0.18)',
+            background: 'linear-gradient(180deg, rgba(13,20,32,0.98) 0%, rgba(9,15,25,0.98) 100%)',
+            padding: '16px 18px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
           }}
         >
-          <div style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#64748b', marginBottom: 10 }}>
+          <div style={{ fontSize: 11, color: '#6f839a', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
             {label}
           </div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: tone }}>
+          <div style={{ fontSize: typeof value === 'number' ? 32 : 20, lineHeight: 1, fontWeight: 700, color: accent }}>
             {value}
           </div>
         </div>
