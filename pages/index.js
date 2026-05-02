@@ -120,7 +120,7 @@ export default function Home() {
         />
         <link
           rel="icon"
-          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>S</text></svg>"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%239945FF'/><circle cx='50' cy='50' r='12' fill='%23fff'/><path d='M50 22a28 28 0 0 1 28 28' stroke='%23fff' stroke-width='6' stroke-linecap='round' fill='none'/><path d='M50 6a44 44 0 0 1 44 44' stroke='%23fff' stroke-width='5' stroke-linecap='round' fill='none' opacity='0.5'/></svg>"
         />
       </Head>
 
@@ -151,16 +151,17 @@ export default function Home() {
                   width: 38,
                   height: 38,
                   borderRadius: 10,
-                  border: '1px solid rgba(121,145,172,0.22)',
-                  background: 'linear-gradient(180deg, rgba(18,29,43,0.98) 0%, rgba(11,18,28,0.98) 100%)',
+                  background: 'linear-gradient(135deg, #14F195 0%, #9945FF 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontWeight: 700,
-                  color: '#f0f6fd',
                 }}
               >
-                S
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="12" cy="12" r="3" fill="#fff"/>
+                  <path d="M12 5a7 7 0 0 1 7 7" stroke="#fff" strokeWidth="2" strokeLinecap="round" fill="none"/>
+                  <path d="M12 1a11 11 0 0 1 11 11" stroke="#fff" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.6"/>
+                </svg>
               </div>
               <div>
                 <h1 style={{ margin: 0, fontSize: 29, lineHeight: 1, color: '#eff5fb' }}>SolRadar</h1>
