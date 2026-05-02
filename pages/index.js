@@ -100,7 +100,7 @@ export default function Home() {
                 className={`tab-btn${tab === v ? ' active' : ''}`}
                 onClick={() => setTab(v)}
               >
-                {v === 'trending' ? '🔥 Trending' : '🆕 New Listings'}
+                {v === 'trending' ? 'Trending' : 'New Listings'}
               </button>
             ))}
           </div>
