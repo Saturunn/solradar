@@ -11,10 +11,10 @@ const nextConfig = {
             value: [
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https://birdeye.so https://raw.githubusercontent.com https://arweave.net",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: https://birdeye.so https://raw.githubusercontent.com https://arweave.net https://ipfs.io https://i.ibb.co https://metadata.rapidlaunch.io https://thumbnails.padre.gg https://desperate-moccasin-minnow.myfilebase.com",
               "connect-src 'self'",
-              "font-src 'self' data:",
+              "font-src 'self' data: https://fonts.gstatic.com",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
@@ -41,7 +41,7 @@ const nextConfig = {
     ];
   },
   images: {
-    domains: ['birdeye.so', 'raw.githubusercontent.com', 'arweave.net'],
+    domains: ['birdeye.so', 'raw.githubusercontent.com', 'arweave.net', 'ipfs.io', 'i.ibb.co'],
   },
 };
 
