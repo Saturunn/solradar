@@ -196,6 +196,12 @@ export default function TokenModal({ token, onClose }) {
                 </span>
               ))}
             </div>
+
+            <div style={{ marginTop: 14, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,209,102,0.06)', border: '1px solid rgba(255,209,102,0.12)' }}>
+              <div style={{ fontSize: 10, color: '#c4a44e', lineHeight: 1.6 }}>
+                ⚠️ Risk scores are based on simple on-chain checks (freeze/mint authority, holder concentration). Not financial advice — always DYOR.
+              </div>
+            </div>
           </div>
         </div>
 

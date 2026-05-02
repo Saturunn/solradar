@@ -120,7 +120,7 @@ export default function Home() {
         />
         <link
           rel="icon"
-          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%239945FF'/><circle cx='50' cy='50' r='12' fill='%23fff'/><path d='M50 22a28 28 0 0 1 28 28' stroke='%23fff' stroke-width='6' stroke-linecap='round' fill='none'/><path d='M50 6a44 44 0 0 1 44 44' stroke='%23fff' stroke-width='5' stroke-linecap='round' fill='none' opacity='0.5'/></svg>"
+          href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>S</text></svg>"
         />
       </Head>
 
@@ -151,17 +151,16 @@ export default function Home() {
                   width: 38,
                   height: 38,
                   borderRadius: 10,
-                  background: 'linear-gradient(135deg, #14F195 0%, #9945FF 100%)',
+                  border: '1px solid rgba(121,145,172,0.22)',
+                  background: 'linear-gradient(180deg, rgba(18,29,43,0.98) 0%, rgba(11,18,28,0.98) 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  fontWeight: 700,
+                  color: '#f0f6fd',
                 }}
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="3" fill="#fff"/>
-                  <path d="M12 5a7 7 0 0 1 7 7" stroke="#fff" strokeWidth="2" strokeLinecap="round" fill="none"/>
-                  <path d="M12 1a11 11 0 0 1 11 11" stroke="#fff" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.6"/>
-                </svg>
+                S
               </div>
               <div>
                 <h1 style={{ margin: 0, fontSize: 29, lineHeight: 1, color: '#eff5fb' }}>SolRadar</h1>
@@ -284,6 +283,29 @@ export default function Home() {
             activeTab={tab}
             fallbackSource={fallbackSource}
           />
+
+          <div
+            style={{
+              marginBottom: 18,
+              borderRadius: 14,
+              border: '1px solid rgba(255,209,102,0.14)',
+              background: 'linear-gradient(180deg, rgba(40,32,14,0.28) 0%, rgba(26,22,12,0.28) 100%)',
+              padding: '14px 16px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 12,
+            }}
+          >
+            <span style={{ fontSize: 18, lineHeight: 1, flexShrink: 0 }}>⚠️</span>
+            <div>
+              <div style={{ fontSize: 11, color: '#cba75d', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
+                Disclaimer
+              </div>
+              <div style={{ fontSize: 12, color: '#d4c08a', lineHeight: 1.65 }}>
+                Risk labels (SAFE, CAUTION, RISKY, DANGER) are based on simple on-chain heuristics such as freeze/mint authority and holder concentration. They are <strong style={{ color: '#f0d99d' }}>not financial advice</strong> and do not guarantee token safety. Always do your own research before trading.
+              </div>
+            </div>
+          </div>
 
           <div
             style={{
