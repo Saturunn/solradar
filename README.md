@@ -193,4 +193,4 @@ curl -X POST "https://your-app.vercel.app/api/telegram-setup?secret=your_setup_s
 
 ---
 
-Built for the Birdeye BIP Competition Sprint 2.
+Built for the Birdeye BIP Competition Sprint 4.
