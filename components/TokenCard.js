@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 function formatPrice(v) {
   const p = Number(v || 0);
   if (p === 0) return '$0.00';
@@ -14,6 +16,13 @@ function compact(v) {
   return `$${n.toFixed(0)}`;
 }
 
+// Generate consistent color from symbol for fallback icons
+function symbolHue(sym) {
+  let hash = 0;
+  for (let i = 0; i < (sym || '').length; i++) hash = sym.charCodeAt(i) + ((hash << 5) - hash);
+  return Math.abs(hash) % 360;
+}
+
 const RISK_CLASS = {
   SAFE: 'risk-safe',
   CAUTION: 'risk-caution',
@@ -23,29 +32,35 @@ const RISK_CLASS = {
 };
 
 export default function TokenCard({ token, rank, onClick }) {
+  const [imgError, setImgError] = useState(false);
   const risk = token.riskScore || {};
   const change = Number(token.priceChange24hPercent || 0);
   const vol = Number(token.volume24hUSD || token.volumeUSD || 0);
   const mcap = Number(token.marketCap || token.marketcap || 0);
   const sign = change >= 0 ? '+' : '';
   const cls = RISK_CLASS[risk.label] || 'risk-na';
+  const letter = (token.symbol || '?').charAt(0).toUpperCase();
+  const hue = symbolHue(token.symbol);
 
   return (
     <button type="button" className="token-card" onClick={onClick}>
       <div className="token-header">
         <div className="token-info">
-          {token.logoURI ? (
+          {token.logoURI && !imgError ? (
             <img
               className="token-icon"
               src={token.logoURI}
               alt=""
               width={36}
               height={36}
-              onError={e => { e.currentTarget.style.display = 'none'; }}
+              onError={() => setImgError(true)}
             />
           ) : (
-            <div className="token-icon-fallback">
-              {(token.symbol || '?').charAt(0)}
+            <div
+              className="token-icon-fallback"
+              style={{ background: `hsl(${hue}, 45%, 22%)`, color: `hsl(${hue}, 60%, 72%)` }}
+            >
+              {letter}
             </div>
           )}
           <div className="token-name-group">

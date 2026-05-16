@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function fmtPrice(v) {
   const p = Number(v || 0);
@@ -38,13 +38,70 @@ function Row({ label, value, color }) {
   );
 }
 
+// SVG Sparkline component — renders 24h price trend
+function Sparkline({ data }) {
+  if (!data || data.length < 2) return null;
+
+  const prices = data.map(d => d.price);
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min || 1;
+  const w = 280;
+  const h = 60;
+  const padY = 4;
+
+  const points = prices.map((p, i) => {
+    const x = (i / (prices.length - 1)) * w;
+    const y = padY + ((max - p) / range) * (h - padY * 2);
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+
+  const isUp = prices[prices.length - 1] >= prices[0];
+  const color = isUp ? '#34d399' : '#f87171';
+
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} style={{ width: '100%', height: 60, display: 'block' }}>
+      <defs>
+        <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.15" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points={`0,${h} ${points.join(' ')} ${w},${h}`}
+        fill="url(#sparkFill)"
+      />
+      <polyline
+        points={points.join(' ')}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export default function TokenModal({ token, onClose }) {
   const [copied, setCopied] = useState(false);
+  const [priceHistory, setPriceHistory] = useState(null);
   const risk = token.riskScore || { label: 'N/A', color: 'gray', flags: [] };
   const sec = token.security || {};
   const rc = RISK_COLOR[risk.color] || RISK_COLOR.gray;
   const top10 = sec.top10HolderPercent ? `${Number(sec.top10HolderPercent).toFixed(1)}%` : 'N/A';
   const change = Number(token.priceChange24hPercent || 0);
+
+  // Fetch 24h price history for sparkline
+  useEffect(() => {
+    if (!token.address) return;
+    let cancelled = false;
+    fetch(`/api/price-history?address=${token.address}`)
+      .then(r => r.json())
+      .then(json => { if (!cancelled && json.success) setPriceHistory(json.data); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [token.address]);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -58,6 +115,14 @@ export default function TokenModal({ token, onClose }) {
           <button type="button" className="modal-close" onClick={onClose}>✕</button>
         </div>
 
+        {/* Sparkline */}
+        {priceHistory && priceHistory.length > 1 && (
+          <div className="modal-section" style={{ marginBottom: 12 }}>
+            <div className="modal-section-title">24h Price Trend</div>
+            <Sparkline data={priceHistory} />
+          </div>
+        )}
+
         {/* Market + Risk */}
         <div className="modal-grid">
           <div className="modal-section">
@@ -66,6 +131,7 @@ export default function TokenModal({ token, onClose }) {
             <Row label="24h Change" value={fmtPct(token.priceChange24hPercent)} color={change >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'} />
             <Row label="24h Volume" value={compact(token.volume24hUSD || token.volumeUSD)} />
             <Row label="Market Cap" value={token.marketCap ? compact(token.marketCap) : 'N/A'} />
+            <Row label="Liquidity" value={token.liquidity ? compact(token.liquidity) : 'N/A'} />
           </div>
 
           <div className="modal-section">
@@ -133,7 +199,7 @@ export default function TokenModal({ token, onClose }) {
 
         {/* Links */}
         <div className="modal-links">
-          <a className="modal-link" href={`https://birdeye.so/token/${token.address}`} target="_blank" rel="noopener noreferrer">
+          <a className="modal-link" href={`https://birdeye.so/token/${token.address}?chain=solana`} target="_blank" rel="noopener noreferrer">
             Birdeye ↗
           </a>
           <a className="modal-link" href={`https://solscan.io/token/${token.address}`} target="_blank" rel="noopener noreferrer">

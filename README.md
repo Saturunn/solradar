@@ -24,7 +24,7 @@ SolRadar helps traders and researchers quickly assess new and trending Solana to
 - `/safe` — Safer trending candidates filtered by risk score ≥ 60
 - `/token <address>` — Deep lookup on any token
 - `/compare <addr1> <addr2>` — Side-by-side comparison of two tokens with risk verdict
-- **Auto Alerts** — Sends alerts to your chat when a safer trending token breaks out >20% in 24h
+- **Auto Alerts** — Cron job scans trending tokens every 5 min and sends Telegram alerts for breakouts (>20% change, risk ≥ 60)
 
 ---
 
@@ -66,6 +66,8 @@ Tokens start at 100 and points are deducted for red flags:
 | `/defi/token_security` | GET | Security analysis (freeze/mint authority, holder concentration) |
 | `/defi/token_overview` | GET | Real-time price, volume, market cap for individual tokens |
 | `/defi/multi_price` | GET | Batch price lookup for multiple token addresses |
+| `/defi/history_price` | GET | 24-hour price history for sparkline charts |
+| `/defi/txs/token` | GET | Recent swap transactions for a token |
 
 ---
 
@@ -80,7 +82,7 @@ Tokens start at 100 and points are deducted for red flags:
 │  └─────┬─────┘  └─────┬─────┘  └─────┬──────┘  │
 │        │              │              │          │
 │  ┌─────┴──────────────┴──────────────┴──────┐   │
-│  │         Sort / Filter / Modal            │   │
+│  │      Sort / Filter / Sparkline / Modal   │   │
 │  └──────────────────────────────────────────┘   │
 └──────────────────┬──────────────────────────────┘
                    │ API Routes
@@ -88,15 +90,17 @@ Tokens start at 100 and points are deducted for red flags:
           │  /api/trending  │──── Rate Limit + Cache
           │  /api/new-list  │──── Stale-while-revalidate
           │  /api/token     │──── Per-IP throttle
+          │  /api/price-hist│──── 24h sparkline data
+          │  /api/health    │──── System status
           └────────┬────────┘
                    │
-          ┌────────┴────────┐
-          │  Birdeye Public │
-          │      API        │
-          └────────┬────────┘
-                   │
-          ┌────────┴────────┐
-          │   Risk Engine   │
+          ┌────────┴────────┐     ┌─────────────────┐
+          │  Birdeye Public │     │  Vercel Cron     │
+          │      API        │     │  (every 5 min)   │
+          └────────┬────────┘     │  /api/cron-alerts│
+                   │              └────────┬─────────┘
+          ┌────────┴────────┐              │
+          │   Risk Engine   │◄─────────────┘
           │  (score 0-100)  │
           └────────┬────────┘
                    │
@@ -171,6 +175,9 @@ curl -X POST "https://your-app.vercel.app/api/telegram-setup?secret=your_setup_s
 | `/api/trending` | GET | Trending tokens + risk enrichment + alert dispatch |
 | `/api/new-listings` | GET | New listings with trending fallback |
 | `/api/token?address=...` | GET | Single token overview + security + risk |
+| `/api/price-history?address=...` | GET | 24h price data for sparkline chart |
+| `/api/health` | GET | System status + service connectivity |
+| `/api/cron-alerts` | POST | Cron-triggered alert scanner (every 5 min) |
 | `/api/telegram-webhook` | POST | Telegram bot command handler |
 | `/api/telegram-setup` | POST | Register webhook + bot commands |
 
