@@ -31,6 +31,39 @@ export default function Home() {
   const [sortBy, setSortBy] = useState('rank');
   const [safeOnly, setSafeOnly] = useState(false);
 
+  // Easter eggs
+  const [easterEgg, setEasterEgg] = useState(null);
+  const [logoClicks, setLogoClicks] = useState(0);
+
+  // Konami Code: ↑↑↓↓←→←→BA
+  useEffect(() => {
+    const KONAMI = [38,38,40,40,37,39,37,39,66,65];
+    let pos = 0;
+    const onKey = (e) => {
+      if (e.keyCode === KONAMI[pos]) {
+        pos++;
+        if (pos === KONAMI.length) {
+          pos = 0;
+          setEasterEgg('konami');
+          setTimeout(() => setEasterEgg(null), 6000);
+        }
+      } else {
+        pos = 0;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Logo click Easter egg
+  useEffect(() => {
+    if (logoClicks >= 7) {
+      setEasterEgg('wagmi');
+      setLogoClicks(0);
+      setTimeout(() => setEasterEgg(null), 4000);
+    }
+  }, [logoClicks]);
+
   const fetchTokens = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -82,6 +115,28 @@ export default function Home() {
   // Search handler
   const handleSearch = useCallback(async () => {
     const addr = searchAddr.trim();
+
+    // Easter egg: search bar secrets
+    const lower = addr.toLowerCase();
+    if (lower === 'wen moon' || lower === 'wen lambo') {
+      setEasterEgg('moon');
+      setSearchAddr('');
+      setTimeout(() => setEasterEgg(null), 5000);
+      return;
+    }
+    if (lower === 'gm') {
+      setEasterEgg('gm');
+      setSearchAddr('');
+      setTimeout(() => setEasterEgg(null), 3000);
+      return;
+    }
+    if (lower === 'ngmi' || lower === 'rekt') {
+      setEasterEgg('ngmi');
+      setSearchAddr('');
+      setTimeout(() => setEasterEgg(null), 4000);
+      return;
+    }
+
     if (!addr || addr.length < 32) return;
 
     setSearchLoading(true);
@@ -151,7 +206,7 @@ export default function Home() {
         {/* Navbar */}
         <nav className="navbar">
           <div className="navbar-inner">
-            <div className="brand">
+            <div className="brand" onClick={() => setLogoClicks(c => c + 1)} style={{ cursor: 'pointer', userSelect: 'none' }}>
               <span className="brand-name">SolRadar<span className="brand-dot" /></span>
             </div>
             <div className="nav-meta">
@@ -284,6 +339,82 @@ export default function Home() {
         </footer>
 
         {selected ? <TokenModal token={selected} onClose={() => setSelected(null)} /> : null}
+
+        {/* Easter Eggs */}
+        {easterEgg === 'konami' && (
+          <div className="easter-egg-overlay" onClick={() => setEasterEgg(null)}>
+            <div className="easter-egg-content konami-mode">
+              <div className="rocket-rain">
+                {[...Array(20)].map((_, i) => (
+                  <span key={i} className="flying-rocket" style={{
+                    left: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 2}s`,
+                    animationDuration: `${1.5 + Math.random() * 2}s`,
+                    fontSize: `${20 + Math.random() * 30}px`,
+                  }}>
+                    {['🚀','💎','🌙','⚡','🔥','💰'][i % 6]}
+                  </span>
+                ))}
+              </div>
+              <div className="meme-text">
+                <div className="meme-big">🚀 PUMP IT 🚀</div>
+                <div className="meme-sub">Konami Code Activated!</div>
+                <div className="meme-sub">Number go up technology™</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {easterEgg === 'moon' && (
+          <div className="easter-egg-overlay" onClick={() => setEasterEgg(null)}>
+            <div className="easter-egg-content moon-mode">
+              <div className="meme-text">
+                <div style={{ fontSize: 80 }}>🌙</div>
+                <div className="meme-big">Soon™</div>
+                <div className="meme-sub">Trust the process. WAGMI.</div>
+                <div className="meme-sub" style={{ marginTop: 8, opacity: 0.5 }}>sir wen moon? — every degen ever</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {easterEgg === 'gm' && (
+          <div className="easter-egg-overlay" onClick={() => setEasterEgg(null)}>
+            <div className="easter-egg-content gm-mode">
+              <div className="meme-text">
+                <div style={{ fontSize: 80 }}>☀️</div>
+                <div className="meme-big">GM ser!</div>
+                <div className="meme-sub">Have a profitable day anon 📈</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {easterEgg === 'ngmi' && (
+          <div className="easter-egg-overlay" onClick={() => setEasterEgg(null)}>
+            <div className="easter-egg-content ngmi-mode">
+              <div className="meme-text">
+                <div style={{ fontSize: 80 }}>💀</div>
+                <div className="meme-big">NGMI</div>
+                <div className="meme-sub">You bought the top, didn't you?</div>
+                <div className="meme-sub" style={{ marginTop: 8, opacity: 0.5 }}>"It's not a loss if you don't sell" — 📉</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {easterEgg === 'wagmi' && (
+          <div className="easter-egg-overlay" onClick={() => setEasterEgg(null)}>
+            <div className="easter-egg-content wagmi-mode">
+              <div className="meme-text">
+                <div style={{ fontSize: 60 }}>💎🙌</div>
+                <div className="meme-big">DIAMOND HANDS</div>
+                <div className="meme-sub">You found the secret! WAGMI fren 🤝</div>
+                <div className="meme-sub" style={{ marginTop: 8, opacity: 0.6 }}>Built different. Powered by SolRadar.</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
