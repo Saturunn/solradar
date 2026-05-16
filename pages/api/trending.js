@@ -37,7 +37,7 @@ export default async function handler(req, res) {
       tokens.slice(0, 6).map(async (token) => {
         try {
           const security = await getTokenSecurity(token.address);
-          const riskScore = calculateRiskScore(security);
+          const riskScore = calculateRiskScore(security, token);
 
           if (riskScore.score >= 60 && token.priceChange24hPercent > 20 && shouldSendAlert(token.address)) {
             const sent = await sendTelegramAlert(token, riskScore);

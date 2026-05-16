@@ -1,9 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Head from 'next/head';
 import TokenCard from '../components/TokenCard';
 import TokenModal from '../components/TokenModal';
 
 const REFRESH_MS = 30000;
+
+const SORT_OPTIONS = [
+  { value: 'rank', label: 'Rank' },
+  { value: 'volume', label: 'Volume ↓' },
+  { value: 'change', label: '24h Change ↓' },
+  { value: 'risk', label: 'Risk Score ↓' },
+];
 
 export default function Home() {
   const [tab, setTab] = useState('trending');
@@ -15,6 +22,14 @@ export default function Home() {
   const [warning, setWarning] = useState('');
   const [stale, setStale] = useState(false);
   const [fallbackSource, setFallbackSource] = useState('');
+
+  // Search
+  const [searchAddr, setSearchAddr] = useState('');
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  // Sort & Filter
+  const [sortBy, setSortBy] = useState('rank');
+  const [safeOnly, setSafeOnly] = useState(false);
 
   const fetchTokens = useCallback(async () => {
     setLoading(true);
@@ -64,6 +79,62 @@ export default function Home() {
     return () => { stop(); document.removeEventListener('visibilitychange', onVis); };
   }, [fetchTokens]);
 
+  // Search handler
+  const handleSearch = useCallback(async () => {
+    const addr = searchAddr.trim();
+    if (!addr || addr.length < 32) return;
+
+    setSearchLoading(true);
+    try {
+      const res = await fetch(`/api/token?address=${addr}`);
+      const json = await res.json();
+      if (json.success && json.data) {
+        const { overview, security, riskScore } = json.data;
+        setSelected({
+          address: addr,
+          symbol: overview?.symbol || 'Unknown',
+          name: overview?.name || 'Unknown token',
+          price: overview?.price,
+          priceChange24hPercent: overview?.priceChange24hPercent,
+          volume24hUSD: overview?.v24hUSD || overview?.volume24hUSD,
+          marketCap: overview?.mc || overview?.marketCap,
+          logoURI: overview?.logoURI,
+          security,
+          riskScore,
+        });
+      } else {
+        alert('Token not found or unavailable.');
+      }
+    } catch (_) {
+      alert('Failed to fetch token data.');
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [searchAddr]);
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter') handleSearch();
+  };
+
+  // Sorted & filtered tokens
+  const displayTokens = useMemo(() => {
+    let list = [...tokens];
+
+    if (safeOnly) {
+      list = list.filter(t => t.riskScore?.label === 'SAFE' || t.riskScore?.label === 'CAUTION');
+    }
+
+    if (sortBy === 'volume') {
+      list.sort((a, b) => Number(b.volume24hUSD || b.volumeUSD || 0) - Number(a.volume24hUSD || a.volumeUSD || 0));
+    } else if (sortBy === 'change') {
+      list.sort((a, b) => Number(b.priceChange24hPercent || 0) - Number(a.priceChange24hPercent || 0));
+    } else if (sortBy === 'risk') {
+      list.sort((a, b) => (b.riskScore?.score ?? -1) - (a.riskScore?.score ?? -1));
+    }
+
+    return list;
+  }, [tokens, sortBy, safeOnly]);
+
   const safeCount = tokens.filter(t => t.riskScore?.label === 'SAFE').length;
   const riskyCount = tokens.filter(t => t.riskScore?.label === 'DANGER' || t.riskScore?.label === 'RISKY').length;
   const ts = lastUpdated ? lastUpdated.toLocaleTimeString() : '--';
@@ -91,18 +162,60 @@ export default function Home() {
         </nav>
 
         <main className="main-content">
-          {/* Tab Switcher */}
-          <div className="tab-group">
-            {['trending', 'new'].map(v => (
-              <button
-                key={v}
-                type="button"
-                className={`tab-btn${tab === v ? ' active' : ''}`}
-                onClick={() => setTab(v)}
+          {/* Search Bar */}
+          <div className="search-bar">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Paste token address to inspect…"
+              value={searchAddr}
+              onChange={e => setSearchAddr(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+            />
+            <button
+              type="button"
+              className="search-btn"
+              onClick={handleSearch}
+              disabled={searchLoading || searchAddr.trim().length < 32}
+            >
+              {searchLoading ? 'Scanning…' : 'Inspect'}
+            </button>
+          </div>
+
+          {/* Tab Switcher + Controls Row */}
+          <div className="controls-row">
+            <div className="tab-group">
+              {['trending', 'new'].map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  className={`tab-btn${tab === v ? ' active' : ''}`}
+                  onClick={() => setTab(v)}
+                >
+                  {v === 'trending' ? '🔥 Trending' : '🆕 New Listings'}
+                </button>
+              ))}
+            </div>
+
+            <div className="filter-controls">
+              <select
+                className="sort-select"
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value)}
               >
-                {v === 'trending' ? 'Trending' : 'New Listings'}
+                {SORT_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                className={`filter-btn${safeOnly ? ' active' : ''}`}
+                onClick={() => setSafeOnly(prev => !prev)}
+              >
+                {safeOnly ? '✓ Safer Only' : 'Show All'}
               </button>
-            ))}
+            </div>
           </div>
 
           {/* Stats */}
@@ -151,14 +264,14 @@ export default function Home() {
             <div className="token-grid">
               {[...Array(6)].map((_, i) => <div key={i} className="skeleton" />)}
             </div>
-          ) : tokens.length === 0 ? (
+          ) : displayTokens.length === 0 ? (
             <div className="empty-state">
-              <h3>No tokens found</h3>
-              <p>The {tab === 'trending' ? 'trending' : 'new listing'} feed returned no data right now.</p>
+              <h3>{safeOnly ? 'No safer tokens found' : 'No tokens found'}</h3>
+              <p>{safeOnly ? 'No tokens with SAFE or CAUTION rating right now.' : `The ${tab} feed returned no data.`}</p>
             </div>
           ) : (
             <div className="token-grid">
-              {tokens.map((token, i) => (
+              {displayTokens.map((token, i) => (
                 <TokenCard key={token.address || i} token={token} rank={i + 1} onClick={() => setSelected(token)} />
               ))}
             </div>

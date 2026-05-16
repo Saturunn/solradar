@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 function fmtPrice(v) {
   const p = Number(v || 0);
   if (p === 0) return '$0.00';
@@ -37,6 +39,7 @@ function Row({ label, value, color }) {
 }
 
 export default function TokenModal({ token, onClose }) {
+  const [copied, setCopied] = useState(false);
   const risk = token.riskScore || { label: 'N/A', color: 'gray', flags: [] };
   const sec = token.security || {};
   const rc = RISK_COLOR[risk.color] || RISK_COLOR.gray;
@@ -102,7 +105,27 @@ export default function TokenModal({ token, onClose }) {
 
           <div className="modal-section">
             <div className="modal-section-title">Info</div>
-            <Row label="Address" value={token.address ? `${token.address.slice(0, 6)}...${token.address.slice(-4)}` : 'N/A'} />
+            <div className="modal-metric-row">
+              <span className="modal-metric-label">Address</span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span className="modal-metric-value" style={{ fontSize: 11 }}>
+                  {token.address ? `${token.address.slice(0, 8)}...${token.address.slice(-6)}` : 'N/A'}
+                </span>
+                {token.address && (
+                  <button
+                    type="button"
+                    className="copy-btn"
+                    onClick={() => {
+                      navigator.clipboard.writeText(token.address);
+                      setCopied(true);
+                      setTimeout(() => setCopied(false), 2000);
+                    }}
+                  >
+                    {copied ? '✓ Copied' : 'Copy'}
+                  </button>
+                )}
+              </span>
+            </div>
             <Row label="Symbol" value={token.symbol || 'N/A'} />
             <Row label="Name" value={token.name || 'N/A'} />
           </div>

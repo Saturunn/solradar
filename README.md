@@ -1,54 +1,132 @@
-# SolRadar - Solana Token Intelligence
+# SolRadar — Solana Token Intelligence
 
-Real-time Solana token scanner with risk scoring, powered by the Birdeye Data API.
+> Real-time Solana token surveillance dashboard with automated risk scoring, powered by the [Birdeye Data API](https://birdeye.so).
 
-Built for the Birdeye BIP Competition Sprint 2.
+**Live:** [solradar-plum.vercel.app](https://solradar-plum.vercel.app)
 
-## Features
+---
 
-- **Trending Tokens** - Live feed of top trending Solana tokens
-- **New Listings** - Fresh token listings with safety pre-screening
-- **Risk Scoring** - Automated score from 0-100 based on security analysis
-- **Security Flags** - Freeze authority, mint authority, and holder concentration checks
-- **Telegram Alerts** - Alerts when safer trending tokens break out by more than 20% in 24h
-- **Telegram Commands** - `/start`, `/trending`, `/new`, `/safe`, `/token`, `/help`, `/status`, and `/chatid` via webhook
-- **Smart Auto Refresh** - Refreshes every 30 seconds only while the browser tab is active
-- **Rate Limiting** - Max 1 request per 10 seconds per IP on data endpoints
-- **API Cache** - Successful API responses are cached for 30 seconds
+## What It Does
 
-## Birdeye Endpoints Used
+SolRadar helps traders and researchers quickly assess new and trending Solana tokens by combining Birdeye market data with on-chain security analysis.
 
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /defi/token_trending` | Fetch trending tokens |
-| `GET /v2/tokens/new_listing` | Fetch new token listings |
-| `GET /defi/token_security` | Token security analysis |
-| `GET /defi/token_overview` | Token price and volume data |
-| `GET /defi/multi_price` | Multi-token price fetch |
+### Dashboard Features
+- **Trending & New Listing Feeds** — Real-time token data from Birdeye, auto-refreshing every 30s
+- **Token Search** — Paste any Solana token address to instantly inspect price, volume, and risk
+- **Risk Scoring Engine** — Automated 0-100 safety score based on multiple on-chain heuristics
+- **Sort & Filter** — Sort by volume, price change, or risk score. Toggle to show only safer tokens
+- **Token Detail Modal** — Click any token for full market data, security breakdown, and copyable address
+- **Graceful Degradation** — Stale-while-revalidate caching ensures data is always shown, even during API outages
+
+### Telegram Bot
+- `/trending` — Top trending tokens with 24h stats
+- `/new` — Latest new listings (with trending fallback)
+- `/safe` — Safer trending candidates filtered by risk score ≥ 60
+- `/token <address>` — Deep lookup on any token
+- `/compare <addr1> <addr2>` — Side-by-side comparison of two tokens with risk verdict
+- **Auto Alerts** — Sends alerts to your chat when a safer trending token breaks out >20% in 24h
+
+---
+
+## Risk Scoring Logic
+
+Tokens start at 100 and points are deducted for red flags:
+
+| Check | Deduction | Why it matters |
+|-------|-----------|----------------|
+| Freeze Authority present | -20 | Issuer can freeze your tokens |
+| Mint Authority present | -20 | Issuer can print unlimited supply |
+| Top 10 holders > 80% | -20 | Extreme whale concentration |
+| Top 10 holders > 60% | -10 | High concentration risk |
+| Creator holds > 50% | -15 | Creator insider risk |
+| Creator holds > 20% | -5 | Moderate creator exposure |
+| Liquidity/FDV ratio < 2% | -15 | Very thin exit liquidity |
+| Liquidity/FDV ratio < 5% | -5 | Below-average liquidity |
+| Non-Token2022 standard | +5 | More widely supported |
+
+**Score → Label:**
+
+| Range | Label | Meaning |
+|-------|-------|---------|
+| 80–100 | SAFE | No major red flags detected |
+| 60–79 | CAUTION | Minor concerns worth noting |
+| 40–59 | RISKY | Multiple risk factors present |
+| 0–39 | DANGER | High risk — proceed with extreme caution |
+
+> ⚠️ Risk scores are simple heuristic checks. They are **not financial advice**. Always DYOR.
+
+---
+
+## Birdeye API Endpoints Used
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/defi/token_trending` | GET | Fetch top trending Solana tokens by rank |
+| `/defi/v2/tokens/new_listing` | GET | Fetch newly listed tokens from DEX liquidity pools |
+| `/defi/token_security` | GET | Security analysis (freeze/mint authority, holder concentration) |
+| `/defi/token_overview` | GET | Real-time price, volume, market cap for individual tokens |
+| `/defi/multi_price` | GET | Batch price lookup for multiple token addresses |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│                   Frontend (Next.js)            │
+│  ┌───────────┐  ┌───────────┐  ┌────────────┐  │
+│  │  Trending  │  │    New    │  │   Search   │  │
+│  │    Tab     │  │ Listings  │  │    Bar     │  │
+│  └─────┬─────┘  └─────┬─────┘  └─────┬──────┘  │
+│        │              │              │          │
+│  ┌─────┴──────────────┴──────────────┴──────┐   │
+│  │         Sort / Filter / Modal            │   │
+│  └──────────────────────────────────────────┘   │
+└──────────────────┬──────────────────────────────┘
+                   │ API Routes
+          ┌────────┴────────┐
+          │  /api/trending  │──── Rate Limit + Cache
+          │  /api/new-list  │──── Stale-while-revalidate
+          │  /api/token     │──── Per-IP throttle
+          └────────┬────────┘
+                   │
+          ┌────────┴────────┐
+          │  Birdeye Public │
+          │      API        │
+          └────────┬────────┘
+                   │
+          ┌────────┴────────┐
+          │   Risk Engine   │
+          │  (score 0-100)  │
+          └────────┬────────┘
+                   │
+          ┌────────┴────────┐
+          │  Telegram Bot   │
+          │  (webhook)      │
+          │  Alerts + Cmds  │
+          └─────────────────┘
+```
+
+---
 
 ## Quick Start
 
-### 1. Install
+### 1. Install dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Configure env
+### 2. Configure environment
 
-Create `.env.local` and add:
+Create `.env.local`:
 
-```bash
-BIRDEYE_API_KEY=your_birdeye_key
-TELEGRAM_BOT_TOKEN=your_bot_token
+```env
+BIRDEYE_API_KEY=your_birdeye_api_key
+TELEGRAM_BOT_TOKEN=your_telegram_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
-
-# Required only if you want Telegram commands/webhook responses.
-PUBLIC_APP_URL=https://your-deployed-app.vercel.app
-TELEGRAM_WEBHOOK_SECRET=any_random_secret
-
-# Optional, protects the webhook setup endpoint.
-TELEGRAM_SETUP_SECRET=any_random_setup_secret
+PUBLIC_APP_URL=https://solradar-plum.vercel.app
+TELEGRAM_SETUP_SECRET=any_random_secret
 ```
 
 ### 3. Run locally
@@ -57,71 +135,55 @@ TELEGRAM_SETUP_SECRET=any_random_setup_secret
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open [http://localhost:3000](http://localhost:3000).
 
-### 4. Test Telegram alerts
-
-After the app is running, call:
+### 4. Deploy to Vercel
 
 ```bash
-curl http://localhost:3000/api/test-telegram
+npx vercel --prod
 ```
 
-This sends a test message to `TELEGRAM_CHAT_ID`.
-
-### 5. Enable Telegram `/start` responses
-
-Telegram commands require a public HTTPS webhook URL, so local `localhost` will not receive `/start`.
-
-After deploying, set `PUBLIC_APP_URL` to your deployed app URL, then register the webhook:
+After deploying, register the Telegram webhook:
 
 ```bash
-curl -X POST "https://your-deployed-app.vercel.app/api/telegram-setup?secret=your_setup_secret"
+curl -X POST "https://your-app.vercel.app/api/telegram-setup?secret=your_setup_secret"
 ```
 
-Then `/start`, `/help`, `/status`, and `/chatid` will be handled by:
-
-```text
-/api/telegram-webhook
-```
-
-Telegram menu commands:
-
-- `/trending` - show top trending tokens
-- `/new` - show latest new listings
-- `/safe` - show safer trending candidates
-- `/token <address>` - check risk for one token
-- `/status` - check bot configuration
-- `/chatid` - show the current chat id
-
-## How Alerts Work
-
-The web page calls `/api/trending` when the Trending tab loads and every 30 seconds while the tab is active. That API fetches Birdeye trending tokens, enriches the top tokens with security data, calculates risk, and sends Telegram alerts only when:
-
-- risk score is at least 60,
-- 24h price change is greater than 20%,
-- the token has not already alerted in the last hour,
-- the API response was not served from the 30-second cache.
-
-## Risk Scoring Logic
-
-| Score | Label | Meaning |
-|-------|-------|---------|
-| 80-100 | SAFE | No major red flags |
-| 60-79 | CAUTION | Minor concerns |
-| 40-59 | RISKY | Multiple risk factors |
-| 0-39 | DANGER | High risk |
-
-Scoring deducts points for:
-
-- Freeze authority present (-20)
-- Mint authority present (-20)
-- Top 10 holders above 80% (-20)
-- Top 10 holders above 60% (-10)
+---
 
 ## Tech Stack
 
-- Next.js 14
-- Birdeye Data API
-- Telegram Bot API
-- Vercel
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 14 (Pages Router) |
+| Styling | Vanilla CSS with CSS Variables |
+| Data API | Birdeye Public API |
+| Bot | Telegram Bot API via node-telegram-bot-api |
+| Hosting | Vercel Serverless Functions |
+| Caching | In-memory with stale-while-revalidate |
+
+---
+
+## API Routes
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/api/trending` | GET | Trending tokens + risk enrichment + alert dispatch |
+| `/api/new-listings` | GET | New listings with trending fallback |
+| `/api/token?address=...` | GET | Single token overview + security + risk |
+| `/api/telegram-webhook` | POST | Telegram bot command handler |
+| `/api/telegram-setup` | POST | Register webhook + bot commands |
+
+---
+
+## How Alerts Work
+
+1. The dashboard calls `/api/trending` every 30 seconds
+2. The API enriches the top 6 tokens with security data from Birdeye
+3. For each token, the risk engine calculates a score (0-100)
+4. If a token has **risk score ≥ 60** AND **24h change > 20%** AND has **not alerted in the last hour**, a Telegram alert is sent
+5. Alert cooldown prevents spam (1 alert per token per hour)
+
+---
+
+Built for the Birdeye BIP Competition Sprint 2.
