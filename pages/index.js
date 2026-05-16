@@ -340,26 +340,37 @@ export default function Home() {
 
         {selected ? <TokenModal token={selected} onClose={() => setSelected(null)} /> : null}
 
-        {/* Easter Eggs */}
+        {/* Easter Eggs — Real animations, no emojis */}
         {easterEgg === 'konami' && (
           <div className="easter-egg-overlay" onClick={() => setEasterEgg(null)}>
             <div className="easter-egg-content konami-mode">
-              <div className="rocket-rain">
-                {[...Array(20)].map((_, i) => (
-                  <span key={i} className="flying-rocket" style={{
-                    left: `${Math.random() * 100}%`,
-                    animationDelay: `${Math.random() * 2}s`,
-                    animationDuration: `${1.5 + Math.random() * 2}s`,
-                    fontSize: `${20 + Math.random() * 30}px`,
+              {/* Matrix code rain */}
+              <div className="matrix-rain">
+                {[...Array(30)].map((_, i) => (
+                  <div key={i} className="matrix-col" style={{
+                    left: `${(i / 30) * 100}%`,
+                    animationDelay: `${Math.random() * 3}s`,
+                    animationDuration: `${2 + Math.random() * 3}s`,
                   }}>
-                    {['🚀','💎','🌙','⚡','🔥','💰'][i % 6]}
-                  </span>
+                    {Array.from({ length: 12 }, () =>
+                      String.fromCharCode(0x30A0 + Math.random() * 96)
+                    ).join('\n')}
+                  </div>
+                ))}
+              </div>
+              {/* Glow orbs */}
+              <div className="glow-orbs">
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="glow-orb" style={{
+                    left: `${15 + i * 18}%`,
+                    animationDelay: `${i * 0.4}s`,
+                  }} />
                 ))}
               </div>
               <div className="meme-text">
-                <div className="meme-big">🚀 PUMP IT 🚀</div>
-                <div className="meme-sub">Konami Code Activated!</div>
-                <div className="meme-sub">Number go up technology™</div>
+                <div className="meme-big glitch-text" data-text="PUMP IT">PUMP IT</div>
+                <div className="meme-sub">Konami Code Activated</div>
+                <div className="meme-sub fade-2">Number go up technology</div>
               </div>
             </div>
           </div>
@@ -368,11 +379,24 @@ export default function Home() {
         {easterEgg === 'moon' && (
           <div className="easter-egg-overlay" onClick={() => setEasterEgg(null)}>
             <div className="easter-egg-content moon-mode">
+              {/* Animated stars */}
+              <div className="star-field">
+                {[...Array(40)].map((_, i) => (
+                  <div key={i} className="star" style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 3}s`,
+                    width: `${2 + Math.random() * 3}px`,
+                    height: `${2 + Math.random() * 3}px`,
+                  }} />
+                ))}
+              </div>
+              {/* CSS Moon */}
+              <div className="css-moon" />
               <div className="meme-text">
-                <div style={{ fontSize: 80 }}>🌙</div>
-                <div className="meme-big">Soon™</div>
+                <div className="meme-big">Soon&trade;</div>
                 <div className="meme-sub">Trust the process. WAGMI.</div>
-                <div className="meme-sub" style={{ marginTop: 8, opacity: 0.5 }}>sir wen moon? — every degen ever</div>
+                <div className="meme-sub fade-2" style={{ opacity: 0.5 }}>sir wen moon? &mdash; every degen ever</div>
               </div>
             </div>
           </div>
@@ -381,10 +405,20 @@ export default function Home() {
         {easterEgg === 'gm' && (
           <div className="easter-egg-overlay" onClick={() => setEasterEgg(null)}>
             <div className="easter-egg-content gm-mode">
+              {/* Sun rays */}
+              <div className="sun-container">
+                <div className="sun-core" />
+                <div className="sun-rays">
+                  {[...Array(12)].map((_, i) => (
+                    <div key={i} className="sun-ray" style={{
+                      transform: `rotate(${i * 30}deg)`,
+                    }} />
+                  ))}
+                </div>
+              </div>
               <div className="meme-text">
-                <div style={{ fontSize: 80 }}>☀️</div>
-                <div className="meme-big">GM ser!</div>
-                <div className="meme-sub">Have a profitable day anon 📈</div>
+                <div className="meme-big">GM</div>
+                <div className="meme-sub">Have a profitable day, anon</div>
               </div>
             </div>
           </div>
@@ -393,11 +427,13 @@ export default function Home() {
         {easterEgg === 'ngmi' && (
           <div className="easter-egg-overlay" onClick={() => setEasterEgg(null)}>
             <div className="easter-egg-content ngmi-mode">
+              {/* Static noise scanlines */}
+              <div className="static-noise" />
+              <div className="scanlines" />
               <div className="meme-text">
-                <div style={{ fontSize: 80 }}>💀</div>
-                <div className="meme-big">NGMI</div>
-                <div className="meme-sub">You bought the top, didn't you?</div>
-                <div className="meme-sub" style={{ marginTop: 8, opacity: 0.5 }}>"It's not a loss if you don't sell" — 📉</div>
+                <div className="meme-big glitch-text" data-text="NGMI">NGMI</div>
+                <div className="meme-sub">You bought the top, didn&apos;t you?</div>
+                <div className="meme-sub fade-2" style={{ opacity: 0.5 }}>&ldquo;It&apos;s not a loss if you don&apos;t sell&rdquo;</div>
               </div>
             </div>
           </div>
@@ -406,11 +442,23 @@ export default function Home() {
         {easterEgg === 'wagmi' && (
           <div className="easter-egg-overlay" onClick={() => setEasterEgg(null)}>
             <div className="easter-egg-content wagmi-mode">
+              {/* Sparkle particles */}
+              <div className="sparkle-field">
+                {[...Array(20)].map((_, i) => (
+                  <div key={i} className="sparkle" style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 2}s`,
+                    animationDuration: `${1 + Math.random() * 2}s`,
+                  }} />
+                ))}
+              </div>
+              {/* CSS Diamond */}
+              <div className="css-diamond" />
               <div className="meme-text">
-                <div style={{ fontSize: 60 }}>💎🙌</div>
                 <div className="meme-big">DIAMOND HANDS</div>
-                <div className="meme-sub">You found the secret! WAGMI fren 🤝</div>
-                <div className="meme-sub" style={{ marginTop: 8, opacity: 0.6 }}>Built different. Powered by SolRadar.</div>
+                <div className="meme-sub">You found the secret! WAGMI fren</div>
+                <div className="meme-sub fade-2" style={{ opacity: 0.6 }}>Built different. Powered by SolRadar.</div>
               </div>
             </div>
           </div>
