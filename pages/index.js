@@ -127,7 +127,7 @@ export default function Home() {
     if (sortBy === 'volume') {
       list.sort((a, b) => Number(b.volume24hUSD || b.volumeUSD || 0) - Number(a.volume24hUSD || a.volumeUSD || 0));
     } else if (sortBy === 'change') {
-      list.sort((a, b) => Number(b.priceChange24hPercent || 0) - Number(a.priceChange24hPercent || 0));
+      list.sort((a, b) => Number(b.price24hChangePercent || b.priceChange24hPercent || 0) - Number(a.price24hChangePercent || a.priceChange24hPercent || 0));
     } else if (sortBy === 'risk') {
       list.sort((a, b) => (b.riskScore?.score ?? -1) - (a.riskScore?.score ?? -1));
     }

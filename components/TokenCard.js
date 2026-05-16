@@ -5,6 +5,7 @@ function formatPrice(v) {
   if (p === 0) return '$0.00';
   if (p < 0.0001) return `$${p.toExponential(2)}`;
   if (p < 1) return `$${p.toFixed(6)}`;
+  if (p >= 1000) return `$${p.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   return `$${p.toFixed(2)}`;
 }
 
@@ -13,10 +14,11 @@ function compact(v) {
   if (n >= 1e9) return `$${(n / 1e9).toFixed(1)}B`;
   if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
   if (n >= 1e3) return `$${(n / 1e3).toFixed(1)}K`;
-  return `$${n.toFixed(0)}`;
+  if (n > 0) return `$${n.toFixed(0)}`;
+  return '—';
 }
 
-// Generate consistent color from symbol for fallback icons
+// Generate consistent color from symbol string
 function symbolHue(sym) {
   let hash = 0;
   for (let i = 0; i < (sym || '').length; i++) hash = sym.charCodeAt(i) + ((hash << 5) - hash);
@@ -34,9 +36,12 @@ const RISK_CLASS = {
 export default function TokenCard({ token, rank, onClick }) {
   const [imgError, setImgError] = useState(false);
   const risk = token.riskScore || {};
-  const change = Number(token.priceChange24hPercent || 0);
+
+  // Birdeye uses price24hChangePercent, but we also handle priceChange24hPercent
+  const change = Number(token.price24hChangePercent || token.priceChange24hPercent || 0);
   const vol = Number(token.volume24hUSD || token.volumeUSD || 0);
-  const mcap = Number(token.marketCap || token.marketcap || 0);
+  const mcap = Number(token.marketcap || token.marketCap || 0);
+  const liq = Number(token.liquidity || 0);
   const sign = change >= 0 ? '+' : '';
   const cls = RISK_CLASS[risk.label] || 'risk-na';
   const letter = (token.symbol || '?').charAt(0).toUpperCase();
@@ -92,11 +97,11 @@ export default function TokenCard({ token, rank, onClick }) {
         </div>
         <div>
           <div className="metric-label">MCap</div>
-          <div className="metric-value">{mcap > 0 ? compact(mcap) : '—'}</div>
+          <div className="metric-value">{compact(mcap)}</div>
         </div>
         <div>
-          <div className="metric-label">Flags</div>
-          <div className="metric-value">{risk.flags?.length || 0}</div>
+          <div className="metric-label">Liquidity</div>
+          <div className="metric-value">{compact(liq)}</div>
         </div>
       </div>
 

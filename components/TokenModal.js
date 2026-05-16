@@ -90,7 +90,7 @@ export default function TokenModal({ token, onClose }) {
   const sec = token.security || {};
   const rc = RISK_COLOR[risk.color] || RISK_COLOR.gray;
   const top10 = sec.top10HolderPercent ? `${Number(sec.top10HolderPercent).toFixed(1)}%` : 'N/A';
-  const change = Number(token.priceChange24hPercent || 0);
+  const change = Number(token.price24hChangePercent || token.priceChange24hPercent || 0);
 
   // Fetch 24h price history for sparkline
   useEffect(() => {
@@ -128,10 +128,10 @@ export default function TokenModal({ token, onClose }) {
           <div className="modal-section">
             <div className="modal-section-title">Market</div>
             <Row label="Price" value={fmtPrice(token.price)} />
-            <Row label="24h Change" value={fmtPct(token.priceChange24hPercent)} color={change >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'} />
+            <Row label="24h Change" value={fmtPct(token.price24hChangePercent || token.priceChange24hPercent)} color={change >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'} />
             <Row label="24h Volume" value={compact(token.volume24hUSD || token.volumeUSD)} />
-            <Row label="Market Cap" value={token.marketCap ? compact(token.marketCap) : 'N/A'} />
-            <Row label="Liquidity" value={token.liquidity ? compact(token.liquidity) : 'N/A'} />
+            <Row label="Market Cap" value={compact(token.marketcap || token.marketCap)} />
+            <Row label="Liquidity" value={compact(token.liquidity)} />
           </div>
 
           <div className="modal-section">

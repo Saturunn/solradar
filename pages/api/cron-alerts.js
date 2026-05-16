@@ -26,7 +26,7 @@ export default async function handler(req, res) {
       try {
         const security = await getTokenSecurity(token.address);
         const riskScore = calculateRiskScore(security, token);
-        const change = Number(token.priceChange24hPercent || 0);
+        const change = Number(token.price24hChangePercent || token.priceChange24hPercent || 0);
 
         if (
           riskScore.score >= 60 &&
